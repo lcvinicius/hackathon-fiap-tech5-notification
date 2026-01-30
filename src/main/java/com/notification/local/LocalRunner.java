@@ -15,7 +15,10 @@ public class LocalRunner {
     private static final Logger logger = LoggerFactory.getLogger(LocalRunner.class);
 
     public static void main(String[] args) {
-        String body = "{\"medicineId\":\"med-123\",\"medicineName\":\"Dipirona\",\"ubsId\":\"ubs-456\",\"ubsName\":\"UBS Centro\",\"extra\":\"ignored\"}";
+        String body = System.getenv("EVENT_JSON");
+        if (body == null || body.isBlank()) {
+            body = "{\"idMedicamento\":\"med-123\",\"nomeMedicamento\":\"Dipirona\",\"idPosto\":\"ubs-456\",\"nomePosto\":\"UBS Centro\",\"extra\":\"ignored\"}";
+        }
 
         try {
             EventParser parser = new EventParser();
