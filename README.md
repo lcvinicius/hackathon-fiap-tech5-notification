@@ -102,6 +102,58 @@ Para testar com DB, exporte variáveis do Postgres e rode com:
 
 - `RUN_DB_TEST=true`
 
+## Como testar (MVP) — checklist oficial
+
+Você só precisa provar 4 coisas pelos logs:
+
+1) O serviço lê um evento
+2) Consulta o banco corretamente (read-only)
+3) Gera a mensagem certa
+4) Tenta publicar no SNS (mock/local)
+
+### Teste principal (recomendado): simular evento SQS e chamar o handler
+
+Este é o cenário ideal para vídeo/banca: sem AWS, sem SQS real.
+
+1) Suba o Postgres (com dados fake):
+
+```bash
+docker compose up -d db
+```
+
+2) Rode o jar em modo handler (simula SQS -> Lambda):
+
+```bash
+docker compose run --rm \
+  -e LOCAL_MODE=handler \
+  -e RUN_DB_TEST=true \
+  -e SNS_DISABLED=true \
+  -e EVENT_JSON='{"idMedicamento": 1, "idPosto": 10}' \
+  app
+```
+
+O que observar nos logs:
+
+- `processing record` / `parsed event`  → prova que leu o evento
+- `subscribers found; count=...`       → prova que consultou o banco
+- `[MOCK] Enviando SMS para ...`       → prova tentativa de publicação (SNS mock)
+- `notification summary`              → prova do fluxo completo
+
+### Teste de integração (banco real) com seed
+
+O `docker/db/init.sql` cria tabelas e insere 2 usuários inscritos em `med-123` + `ubs-456`.
+
+Para disparar exatamente esse caso:
+
+```bash
+docker compose run --rm \
+  -e LOCAL_MODE=handler \
+  -e RUN_DB_TEST=true \
+  -e SNS_DISABLED=true \
+  -e EVENT_JSON='{"idMedicamento":"med-123","idPosto":"ubs-456","nomeMedicamento":"Dipirona","nomePosto":"UBS Centro"}' \
+  app
+```
+
 ## Lambda
 
 O handler do Lambda é:

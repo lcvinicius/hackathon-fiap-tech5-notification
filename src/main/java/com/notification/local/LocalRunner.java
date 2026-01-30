@@ -1,6 +1,8 @@
 package com.notification.local;
 
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.notification.db.DataSourceProvider;
+import com.notification.handler.NotificationLambdaHandler;
 import com.notification.model.MedicationArrivedEvent;
 import com.notification.parser.EventParser;
 import com.notification.repository.JdbcSubscriberRepository;
@@ -15,17 +17,27 @@ public class LocalRunner {
     private static final Logger logger = LoggerFactory.getLogger(LocalRunner.class);
 
     public static void main(String[] args) {
-        String body = System.getenv("EVENT_JSON");
+        String mode = getConfig("LOCAL_MODE");
+        if (mode == null || mode.isBlank()) {
+            mode = "processor";
+        }
+
+        String body = getConfig("EVENT_JSON");
         if (body == null || body.isBlank()) {
             body = "{\"idMedicamento\":\"med-123\",\"nomeMedicamento\":\"Dipirona\",\"idPosto\":\"ubs-456\",\"nomePosto\":\"UBS Centro\",\"extra\":\"ignored\"}";
         }
 
         try {
+            if ("handler".equalsIgnoreCase(mode)) {
+                runHandlerMode(body);
+                return;
+            }
+
             EventParser parser = new EventParser();
             MedicationArrivedEvent event = parser.parseMedicationArrivedEvent(body);
             logger.info("parsed local event: {}", event);
 
-            boolean runDbTest = "true".equalsIgnoreCase(System.getenv("RUN_DB_TEST"));
+            boolean runDbTest = "true".equalsIgnoreCase(getConfig("RUN_DB_TEST"));
             if (runDbTest) {
                 if (System.getenv("SNS_DISABLED") == null && System.getProperty("SNS_DISABLED") == null) {
                     logger.info("SNS_DISABLED not set; defaulting to true for local runs (JVM property)");
@@ -45,5 +57,30 @@ public class LocalRunner {
             logger.error("failed to parse local event", e);
             System.exit(1);
         }
+    }
+
+    private static String getConfig(String key) {
+        String fromEnv = System.getenv(key);
+        if (fromEnv != null) {
+            return fromEnv;
+        }
+        return System.getProperty(key);
+    }
+
+    private static void runHandlerMode(String body) {
+        if (System.getenv("SNS_DISABLED") == null && System.getProperty("SNS_DISABLED") == null) {
+            logger.info("SNS_DISABLED not set; defaulting to true for local runs (JVM property)");
+            System.setProperty("SNS_DISABLED", "true");
+        }
+
+        SQSEvent.SQSMessage msg = new SQSEvent.SQSMessage();
+        msg.setMessageId("local-1");
+        msg.setBody(body);
+
+        SQSEvent sqsEvent = new SQSEvent();
+        sqsEvent.setRecords(java.util.List.of(msg));
+
+        logger.info("running in LOCAL_MODE=handler (simulating SQS -> Lambda handler)");
+        new NotificationLambdaHandler().handleRequest(sqsEvent, null);
     }
 }
