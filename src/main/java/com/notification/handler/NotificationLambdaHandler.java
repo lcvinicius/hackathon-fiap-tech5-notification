@@ -5,14 +5,13 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.notification.db.DataSourceProvider;
 import com.notification.model.MedicationArrivedEvent;
-import com.notification.model.Subscriber;
 import com.notification.parser.EventParser;
 import com.notification.repository.JdbcSubscriberRepository;
+import com.notification.service.NotificationMessageBuilder;
 import com.notification.service.NotificationProcessor;
+import com.notification.service.PublisherFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class NotificationLambdaHandler implements RequestHandler<SQSEvent, Void> {
 
@@ -22,7 +21,11 @@ public class NotificationLambdaHandler implements RequestHandler<SQSEvent, Void>
 
     public NotificationLambdaHandler() {
         this.eventParser = new EventParser();
-        this.processor = new NotificationProcessor(new JdbcSubscriberRepository(DataSourceProvider.get()));
+        this.processor = new NotificationProcessor(
+                new JdbcSubscriberRepository(DataSourceProvider.get()),
+                new NotificationMessageBuilder(),
+                PublisherFactory.fromEnv()
+        );
     }
 
     @Override
@@ -43,8 +46,7 @@ public class NotificationLambdaHandler implements RequestHandler<SQSEvent, Void>
                 MedicationArrivedEvent parsed = eventParser.parseMedicationArrivedEvent(body);
                 logger.info("parsed event; messageId={}; event={}", messageId, parsed);
 
-                List<Subscriber> subscribers = processor.findSubscribers(parsed);
-                logger.info("ready to notify; messageId={}; subscribers={}", messageId, subscribers.size());
+                processor.process(parsed);
             } catch (Exception e) {
                 logger.error("failed to process record; messageId={}; body={}", messageId, body, e);
             }

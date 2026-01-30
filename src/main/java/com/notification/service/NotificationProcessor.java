@@ -13,16 +13,38 @@ public class NotificationProcessor {
     private static final Logger logger = LoggerFactory.getLogger(NotificationProcessor.class);
 
     private final SubscriberRepository subscriberRepository;
+    private final NotificationMessageBuilder messageBuilder;
+    private final NotificationPublisher publisher;
 
-    public NotificationProcessor(SubscriberRepository subscriberRepository) {
+    public NotificationProcessor(SubscriberRepository subscriberRepository,
+                                 NotificationMessageBuilder messageBuilder,
+                                 NotificationPublisher publisher) {
         this.subscriberRepository = subscriberRepository;
+        this.messageBuilder = messageBuilder;
+        this.publisher = publisher;
     }
 
-    public List<Subscriber> findSubscribers(MedicationArrivedEvent event) throws Exception {
+    public void process(MedicationArrivedEvent event) throws Exception {
         String medicineId = event.getMedicineId();
         String ubsId = event.getUbsId();
         List<Subscriber> subscribers = subscriberRepository.findSubscribers(medicineId, ubsId);
         logger.info("subscribers found; count={}; medicineId={}; ubsId={}", subscribers.size(), medicineId, ubsId);
-        return subscribers;
+
+        String message = messageBuilder.buildMessage(event);
+        int sent = 0;
+        int failed = 0;
+
+        for (Subscriber subscriber : subscribers) {
+            try {
+                publisher.publishSms(subscriber.getPhone(), message);
+                sent++;
+                logger.info("notification sent; phone={}", subscriber.getPhone());
+            } catch (Exception e) {
+                failed++;
+                logger.error("notification failed; phone={}", subscriber.getPhone(), e);
+            }
+        }
+
+        logger.info("notification summary; total={}; sent={}; failed={}", subscribers.size(), sent, failed);
     }
 }

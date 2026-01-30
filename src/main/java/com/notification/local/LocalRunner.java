@@ -2,14 +2,13 @@ package com.notification.local;
 
 import com.notification.db.DataSourceProvider;
 import com.notification.model.MedicationArrivedEvent;
-import com.notification.model.Subscriber;
 import com.notification.parser.EventParser;
 import com.notification.repository.JdbcSubscriberRepository;
+import com.notification.service.NotificationMessageBuilder;
 import com.notification.service.NotificationProcessor;
+import com.notification.service.PublisherFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class LocalRunner {
 
@@ -25,9 +24,17 @@ public class LocalRunner {
 
             boolean runDbTest = "true".equalsIgnoreCase(System.getenv("RUN_DB_TEST"));
             if (runDbTest) {
-                NotificationProcessor processor = new NotificationProcessor(new JdbcSubscriberRepository(DataSourceProvider.get()));
-                List<Subscriber> subscribers = processor.findSubscribers(event);
-                logger.info("db test OK; subscribers={}", subscribers);
+                if (System.getenv("SNS_DISABLED") == null && System.getProperty("SNS_DISABLED") == null) {
+                    logger.info("SNS_DISABLED not set; defaulting to true for local runs (JVM property)");
+                    System.setProperty("SNS_DISABLED", "true");
+                }
+
+                NotificationProcessor processor = new NotificationProcessor(
+                        new JdbcSubscriberRepository(DataSourceProvider.get()),
+                        new NotificationMessageBuilder(),
+                        PublisherFactory.fromEnv()
+                );
+                processor.process(event);
             } else {
                 logger.info("db test skipped (set RUN_DB_TEST=true to enable)");
             }
