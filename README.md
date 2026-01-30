@@ -67,7 +67,51 @@ Observação: para cumprir o “1 envio por usuário”, o modo recomendado é `
 
 Pré-requisito: Docker Desktop.
 
-1) Subir Postgres + app:
+### TL;DR (teste MVP em 3 comandos)
+
+Esse é o jeito mais simples de provar o fluxo completo (sem AWS):
+
+1) Subir Postgres (com seed de dados)
+2) Simular evento do SQS chamando o handler
+3) Ver logs (evento lido, DB consultado, mensagem gerada, “envio” SNS mock)
+
+**Windows / PowerShell (recomendado):**
+
+1) Suba o banco:
+
+```powershell
+docker compose up -d db
+```
+
+2) Rode o serviço em modo `handler` (simula SQS -> Lambda) com SNS mock:
+
+```powershell
+docker compose run --rm `
+  -e LOCAL_MODE=handler `
+  -e RUN_DB_TEST=true `
+  -e SNS_DISABLED=true `
+  -e EVENT_JSON='{"idMedicamento":"med-123","idPosto":"ubs-456","nomeMedicamento":"Dipirona","nomePosto":"UBS Centro"}' `
+  app
+```
+
+3) Pare tudo:
+
+```powershell
+docker compose down
+```
+
+**O que você precisa ver nos logs (as 4 provas do MVP):**
+
+- `processing record` / `parsed event`  → leu o evento
+- `subscribers found; count=2`          → consultou o banco
+- `message=Seu medicamento Dipirona...`→ gerou a mensagem
+- `[MOCK] Enviando SMS para ...`        → tentou publicar (SNS mock)
+
+Se isso aparecer, o serviço está validado.
+
+### Alternativa: subir tudo em foreground
+
+Se preferir rodar tudo de uma vez (o app vai executar e sair):
 
 ```bash
 docker compose up --build
@@ -98,9 +142,10 @@ mvn -DskipTests package
 java -DSNS_DISABLED=true -jar target/notification-service-0.1.0-SNAPSHOT.jar
 ```
 
-Para testar com DB, exporte variáveis do Postgres e rode com:
+Para testar com DB, informe o banco e ligue o flag:
 
 - `RUN_DB_TEST=true`
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 
 ## Como testar (MVP) — checklist oficial
 
@@ -111,48 +156,15 @@ Você só precisa provar 4 coisas pelos logs:
 3) Gera a mensagem certa
 4) Tenta publicar no SNS (mock/local)
 
-### Teste principal (recomendado): simular evento SQS e chamar o handler
+### Teste principal (vídeo/banca): simular evento SQS e chamar o handler
 
-Este é o cenário ideal para vídeo/banca: sem AWS, sem SQS real.
-
-1) Suba o Postgres (com dados fake):
-
-```bash
-docker compose up -d db
-```
-
-2) Rode o jar em modo handler (simula SQS -> Lambda):
-
-```bash
-docker compose run --rm \
-  -e LOCAL_MODE=handler \
-  -e RUN_DB_TEST=true \
-  -e SNS_DISABLED=true \
-  -e EVENT_JSON='{"idMedicamento": 1, "idPosto": 10}' \
-  app
-```
-
-O que observar nos logs:
-
-- `processing record` / `parsed event`  → prova que leu o evento
-- `subscribers found; count=...`       → prova que consultou o banco
-- `[MOCK] Enviando SMS para ...`       → prova tentativa de publicação (SNS mock)
-- `notification summary`              → prova do fluxo completo
+Use o TL;DR acima. Ele é o cenário ideal: sem AWS, sem SQS real, com banco real.
 
 ### Teste de integração (banco real) com seed
 
 O `docker/db/init.sql` cria tabelas e insere 2 usuários inscritos em `med-123` + `ubs-456`.
 
-Para disparar exatamente esse caso:
-
-```bash
-docker compose run --rm \
-  -e LOCAL_MODE=handler \
-  -e RUN_DB_TEST=true \
-  -e SNS_DISABLED=true \
-  -e EVENT_JSON='{"idMedicamento":"med-123","idPosto":"ubs-456","nomeMedicamento":"Dipirona","nomePosto":"UBS Centro"}' \
-  app
-```
+Se você usar esse mesmo `EVENT_JSON`, a execução deve mostrar `count=2` e 2 linhas de envio mock.
 
 ## Lambda
 
