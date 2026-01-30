@@ -1,13 +1,21 @@
 package com.notification.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MedicationArrivedEvent {
 
+    @JsonAlias({"idMedicamento"})
     private String medicineId;
+
+    @JsonAlias({"nomeMedicamento"})
     private String medicineName;
+
+    @JsonAlias({"idPosto"})
     private String ubsId;
+
+    @JsonAlias({"nomePosto", "nomeUBS", "nomeUbs"})
     private String ubsName;
 
     public MedicationArrivedEvent() {
