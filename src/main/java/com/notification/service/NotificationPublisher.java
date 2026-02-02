@@ -2,5 +2,5 @@ package com.notification.service;
 
 public interface NotificationPublisher {
 
-    void publishSms(String phoneNumber, String message) throws Exception;
+    void publishEmail(String recipientEmail, String subject, String message) throws Exception;
 }

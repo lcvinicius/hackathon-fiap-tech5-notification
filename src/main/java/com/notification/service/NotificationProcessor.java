@@ -30,18 +30,19 @@ public class NotificationProcessor {
         List<Subscriber> subscribers = subscriberRepository.findSubscribers(medicineId, ubsId);
         logger.info("subscribers found; count={}; medicineId={}; ubsId={}", subscribers.size(), medicineId, ubsId);
 
+        String subject = messageBuilder.buildSubject(event);
         String message = messageBuilder.buildMessage(event);
         int sent = 0;
         int failed = 0;
 
         for (Subscriber subscriber : subscribers) {
             try {
-                publisher.publishSms(subscriber.getPhone(), message);
+                publisher.publishEmail(subscriber.getEmail(), subject, message);
                 sent++;
-                logger.info("notification sent; phone={}", subscriber.getPhone());
+                logger.info("notification sent; email={}", subscriber.getEmail());
             } catch (Exception e) {
                 failed++;
-                logger.error("notification failed; phone={}", subscriber.getPhone(), e);
+                logger.error("notification failed; email={}", subscriber.getEmail(), e);
             }
         }
 

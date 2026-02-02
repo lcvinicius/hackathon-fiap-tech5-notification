@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  phone TEXT NOT NULL
+  email TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_medication_subscription (
@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS user_medication_subscription (
   PRIMARY KEY (user_id, medicine_id, ubs_id)
 );
 
-INSERT INTO users (id, name, phone) VALUES
-  ('user-1', 'Maria', '+5511999999999'),
-  ('user-2', 'Joao',  '+5511888888888')
+INSERT INTO users (id, name, email) VALUES
+  ('user-1', 'Maria', 'maria@example.com'),
+  ('user-2', 'Joao',  'joao@example.com')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO user_medication_subscription (user_id, medicine_id, ubs_id) VALUES

@@ -39,9 +39,9 @@ public class LocalRunner {
 
             boolean runDbTest = "true".equalsIgnoreCase(getConfig("RUN_DB_TEST"));
             if (runDbTest) {
-                if (System.getenv("SNS_DISABLED") == null && System.getProperty("SNS_DISABLED") == null) {
-                    logger.info("SNS_DISABLED not set; defaulting to true for local runs (JVM property)");
-                    System.setProperty("SNS_DISABLED", "true");
+                if (System.getenv("EMAIL_DISABLED") == null && System.getProperty("EMAIL_DISABLED") == null) {
+                    logger.info("EMAIL_DISABLED not set; defaulting to true for local runs (JVM property)");
+                    System.setProperty("EMAIL_DISABLED", "true");
                 }
 
                 NotificationProcessor processor = new NotificationProcessor(
@@ -68,9 +68,9 @@ public class LocalRunner {
     }
 
     private static void runHandlerMode(String body) {
-        if (System.getenv("SNS_DISABLED") == null && System.getProperty("SNS_DISABLED") == null) {
-            logger.info("SNS_DISABLED not set; defaulting to true for local runs (JVM property)");
-            System.setProperty("SNS_DISABLED", "true");
+        if (System.getenv("EMAIL_DISABLED") == null && System.getProperty("EMAIL_DISABLED") == null) {
+            logger.info("EMAIL_DISABLED not set; defaulting to true for local runs (JVM property)");
+            System.setProperty("EMAIL_DISABLED", "true");
         }
 
         SQSEvent.SQSMessage msg = new SQSEvent.SQSMessage();

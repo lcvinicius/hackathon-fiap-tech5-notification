@@ -4,6 +4,14 @@ import com.notification.model.MedicationArrivedEvent;
 
 public class NotificationMessageBuilder {
 
+    public String buildSubject(MedicationArrivedEvent event) {
+        String medicine = pick(event.getMedicineName(), event.getMedicineId());
+        if (medicine == null || medicine.isBlank()) {
+            return "Medicamento disponível";
+        }
+        return "Medicamento disponível: " + medicine;
+    }
+
     public String buildMessage(MedicationArrivedEvent event) {
         String medicine = pick(event.getMedicineName(), event.getMedicineId());
         String posto = pick(event.getUbsName(), event.getUbsId());

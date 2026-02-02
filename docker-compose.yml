@@ -22,6 +22,6 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       RUN_DB_TEST: "true"
-      SNS_DISABLED: "true"
+      EMAIL_DISABLED: "true"
       # Event JSON can be overridden for testing
       EVENT_JSON: '{"idMedicamento":"med-123","nomeMedicamento":"Dipirona","idPosto":"ubs-456","nomePosto":"UBS Centro"}'

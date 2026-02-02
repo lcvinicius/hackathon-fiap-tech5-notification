@@ -7,7 +7,7 @@ Serviço Java (Java 21) pensado para rodar como **AWS Lambda** que:
 - Lê um evento do **SQS** (body JSON)
 - Consulta no **Postgres** quais usuários estão inscritos (somente leitura)
 - Gera a mensagem: `Seu medicamento X está disponível no posto Y.`
-- “Envia” 1 SMS por usuário via **SNS** (no teste local fica mockado e só loga)
+- “Envia” 1 email por usuário via **SES** (no teste local fica mockado e só loga)
 
 Não cria infraestrutura AWS e não expõe API HTTP.
 
@@ -21,13 +21,13 @@ Pré-requisito: Docker Desktop.
 docker compose up -d db
 ```
 
-2) Rodar o serviço simulando **SQS -> Lambda handler** com SNS mock:
+2) Rodar o serviço simulando **SQS -> Lambda handler** com EMAIL mock:
 
 ```powershell
 docker compose run --rm `
   -e LOCAL_MODE=handler `
   -e RUN_DB_TEST=true `
-  -e SNS_DISABLED=true `
+  -e EMAIL_DISABLED=true `
   -e EVENT_JSON='{"idMedicamento":"med-123","idPosto":"ubs-456","nomeMedicamento":"Dipirona","nomePosto":"UBS Centro"}' `
   app
 ```
@@ -43,4 +43,4 @@ docker compose down
 - Leu o evento: `processing record` / `parsed event`
 - Consultou o banco: `subscribers found; count=2`
 - Gerou a mensagem: aparece em `message=...`
-- Tentou enviar SNS (mock): `[MOCK] Enviando SMS para ...`
+- Tentou enviar EMAIL (mock): `[MOCK] Enviando EMAIL para ...`

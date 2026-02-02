@@ -8,7 +8,7 @@ public class NoopPublisher implements NotificationPublisher {
     private static final Logger logger = LoggerFactory.getLogger(NoopPublisher.class);
 
     @Override
-    public void publishSms(String phoneNumber, String message) {
-        logger.info("[MOCK] Enviando SMS para {}; message={}", phoneNumber, message);
+    public void publishEmail(String recipientEmail, String subject, String message) {
+        logger.info("[MOCK] Enviando EMAIL para {}; subject={}; message={}", recipientEmail, subject, message);
     }
 }

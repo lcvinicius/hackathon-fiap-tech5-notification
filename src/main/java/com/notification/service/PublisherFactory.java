@@ -1,6 +1,6 @@
 package com.notification.service;
 
-import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.ses.SesClient;
 
 public class PublisherFactory {
 
@@ -8,27 +8,22 @@ public class PublisherFactory {
     }
 
     public static NotificationPublisher fromEnv() {
-        boolean disabled = "true".equalsIgnoreCase(getConfig("SNS_DISABLED"));
+        boolean disabled = isTrue("EMAIL_DISABLED") || isTrue("SNS_DISABLED");
         if (disabled) {
             return new NoopPublisher();
         }
 
-        String mode = getConfig("SNS_PUBLISH_TARGET");
-        if (mode == null || mode.isBlank()) {
-            mode = "phone";
+        String from = getConfig("EMAIL_FROM");
+        if (from == null || from.isBlank()) {
+            throw new IllegalStateException("EMAIL_FROM must be set when EMAIL_DISABLED=false");
         }
 
-        SnsClient snsClient = SnsClient.builder().build();
+        SesClient sesClient = SesClient.builder().build();
+        return new SesEmailPublisher(sesClient, from);
+    }
 
-        if ("topic".equalsIgnoreCase(mode)) {
-            String topicArn = getConfig("SNS_TOPIC_ARN");
-            if (topicArn == null || topicArn.isBlank()) {
-                throw new IllegalStateException("SNS_TOPIC_ARN must be set when SNS_PUBLISH_TARGET=topic");
-            }
-            return new SnsTopicPublisher(snsClient, topicArn);
-        }
-
-        return new SnsSmsPublisher(snsClient);
+    private static boolean isTrue(String key) {
+        return "true".equalsIgnoreCase(getConfig(key));
     }
 
     private static String getConfig(String key) {

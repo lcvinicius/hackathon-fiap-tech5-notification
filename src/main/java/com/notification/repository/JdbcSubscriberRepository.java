@@ -19,7 +19,7 @@ public class JdbcSubscriberRepository implements SubscriberRepository {
 
     @Override
     public List<Subscriber> findSubscribers(String medicineId, String ubsId) throws Exception {
-        String baseSql = "select u.name, u.phone " +
+        String baseSql = "select u.name, u.email " +
                 "from user_medication_subscription ums " +
                 "join users u on u.id = ums.user_id " +
                 "where ums.medicine_id = ?";
@@ -40,8 +40,8 @@ public class JdbcSubscriberRepository implements SubscriberRepository {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     String name = rs.getString(1);
-                    String phone = rs.getString(2);
-                    subscribers.add(new Subscriber(name, phone));
+                    String email = rs.getString(2);
+                    subscribers.add(new Subscriber(name, email));
                 }
             }
         }
